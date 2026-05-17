@@ -16,12 +16,30 @@
         這裡放了一些人的小窩。每個人都是一個宇宙，<br class="br" />
         只是有些人的宇宙有點味道。
       </p>
+
+      <div class="search-wrap">
+        <input
+          v-model="searchQuery"
+          type="search"
+          class="search-input"
+          placeholder="搜尋站點名稱、標籤或描述…"
+          autocomplete="off"
+        />
+      </div>
     </header>
 
     <section class="list">
       <div class="list-inner">
-        <SiteCard v-for="site in sites" :key="site.url" :site="site" @select="onSelect" />
+        <SiteCard
+          v-for="site in filteredSites"
+          :key="site.url"
+          :site="site"
+          @select="onSelect"
+        />
       </div>
+      <p v-if="filteredSites.length === 0" class="list-empty">
+        沒有找到符合「{{ searchQuery }}」的站點 ¯\_(ツ)_/¯
+      </p>
     </section>
 
     <SiteModal :site="selectedSite" @close="onClose" />
@@ -41,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import SiteCard from '@/components/SiteCard.vue'
 import SiteModal from '@/components/SiteModal.vue'
 import rawSites from '@/data/sites.json'
@@ -50,6 +68,18 @@ import { useDevtools } from '@/composables/useDevtools.js'
 const { start: startDevtools } = useDevtools()
 
 const sites = ref([])
+const searchQuery = ref('')
+
+const filteredSites = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return sites.value
+  return sites.value.filter(
+    (s) =>
+      (s.name && s.name.toLowerCase().includes(q)) ||
+      (s.tagline && s.tagline.toLowerCase().includes(q)) ||
+      (s.description && s.description.toLowerCase().includes(q)),
+  )
+})
 
 function shuffle(arr) {
   const a = [...arr]
@@ -172,7 +202,45 @@ onUnmounted(() => {
   }
 }
 
+/* ── Search ── */
+
+.search-wrap {
+  max-width: 40rem;
+  width: 100%;
+  margin: 1.5rem auto 0;
+  padding: 0 1.5rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid #ede3d3;
+  border-radius: 2rem;
+  background: #fff;
+  font: inherit;
+  font-size: 0.9375rem;
+  color: #3d2c2c;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input::placeholder {
+  color: #c0b0a0;
+}
+
+.search-input:focus {
+  border-color: #e8a87c;
+  box-shadow: 0 0 0 3px rgba(232, 168, 124, 0.2);
+}
+
 /* ── List (full-width grid) ── */
+
+.list-empty {
+  text-align: center;
+  color: #9a8a7a;
+  font-size: 0.9375rem;
+  padding: 3rem 0;
+}
 
 .list {
   flex: 1;
